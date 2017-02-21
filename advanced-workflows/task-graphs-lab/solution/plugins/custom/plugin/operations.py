@@ -1,10 +1,8 @@
 '''Copyright Gigaspaces, 2017, All Rights Reserved'''
-from cloudify.decorators import operation
 from cloudify_aws.connection import EC2ConnectionClient
 from cloudify_aws.ec2.instance import Instance as AwsInstance
 
 
-@operation
 def stop(ctx, **_):
     '''
         Stops an instance
@@ -26,7 +24,6 @@ def stop(ctx, **_):
         % inst.resource_id)
 
 
-@operation
 def start(ctx, **_):
     '''
         Starts an instance
@@ -48,7 +45,6 @@ def start(ctx, **_):
         % inst.resource_id)
 
 
-@operation
 def create_snapshots(ctx, **_):
     '''
         Creates snapshots of all volumes attached to an instance
@@ -74,7 +70,6 @@ def create_snapshots(ctx, **_):
                 % (snapshot.id, snapshot.status))
 
 
-@operation
 def delete_snapshots(ctx, **_):
     '''
         Deletes snapshots of all volumes attached to an instance

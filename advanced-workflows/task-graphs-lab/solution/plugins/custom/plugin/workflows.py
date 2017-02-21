@@ -1,5 +1,4 @@
 '''Copyright Gigaspaces, 2017, All Rights Reserved'''
-from cloudify.decorators import workflow
 from cloudify.plugins import lifecycle
 
 OP_START = 'hacker.interfaces.lifecycle.start'
@@ -75,7 +74,6 @@ def build_instance_subgraph(instance, graph):
     graph.add_dependency(sg_start, sg_snap)
 
 
-@workflow
 def refresh_snapshots(ctx, **_):
     '''
         Executes a complex, graph-based set of lifecycle events
