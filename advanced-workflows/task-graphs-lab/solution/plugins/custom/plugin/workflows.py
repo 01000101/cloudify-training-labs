@@ -62,8 +62,10 @@ def build_instance_subgraph(instance, graph):
     # Init a "recreate snapshots" subgraph
     sg_snap = graph.subgraph('snapshot_subgraph')
     seq_snap = sg_snap.sequence()
-    seq_snap.add(*build_instance_sequence(instance, OP_SS_D))
-    seq_snap.add(*build_instance_sequence(instance, OP_SS_C))
+    if OP_SS_D in instance.node.operations:
+        seq_snap.add(*build_instance_sequence(instance, OP_SS_D))
+    if OP_SS_C in instance.node.operations:
+        seq_snap.add(*build_instance_sequence(instance, OP_SS_C))
     # Init a "start instance" subgraph
     sg_start = graph.subgraph('stop_subgraph')
     seq_start = sg_start.sequence()

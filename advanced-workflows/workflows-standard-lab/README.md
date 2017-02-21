@@ -9,6 +9,8 @@ There’s a custom workflow called `check_wind_speed` that should check the wind
 
 Since this lab folder includes both the blueprint as well as the needed plugin, there's no need to do separate operations to load the plugin.
 
+**Running on a Cloudify Manager**
+
 ```bash
 # Upload the blueprint (and plugin) to a manager
 cfy blueprints upload -b lab-std-wf -p exercise/blueprint.yaml
@@ -18,6 +20,24 @@ cfy deployments create -d lab-std-wf-01 -b lab-std-wf
 
 # Execute the custom workflow
 cfy executions start -d lab-std-wf-01 -w check_wind_speed -l
+```
+
+**Running locally** _(requires being in a VirtualEnv)_
+
+```bash
+# Uninstall any previously installed version of the plugin
+# Windows users: If using Cygwin, use "winpty" before "pip".
+pip uninstall -y lab-wf-standard-plugin
+
+# Install the local plugin into your VirtualEnv
+pip install .
+
+# Initialize the deployment and execute the custom workflow
+cfy local install --install-plugins --debug \
+	--blueprint-path exercise/blueprint.yaml \
+    --inputs exercise/inputs.yaml \
+    --task-retries 60 --task-retry-interval 15 \
+    --workflow refresh_snapshots
 ```
 
 
