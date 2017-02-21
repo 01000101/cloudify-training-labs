@@ -5,7 +5,7 @@ OP_START = 'hacker.interfaces.lifecycle.start'
 OP_STOP = 'hacker.interfaces.lifecycle.stop'
 OP_SS_C = 'hacker.interfaces.lifecycle.create_snapshots'
 OP_SS_D = 'hacker.interfaces.lifecycle.delete_snapshots'
-REQUIRED_OPS = set([OP_START, OP_SS_D, OP_STOP])
+REQUIRED_OPS = set([OP_START, OP_SS_C, OP_SS_D, OP_STOP])
 
 
 def build_instance_sequence(instance, operation,

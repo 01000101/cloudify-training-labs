@@ -45,6 +45,31 @@ def start(ctx, **_):
         % inst.resource_id)
 
 
+def create_snapshots(ctx, **_):
+    '''
+        Creates snapshots of all volumes attached to an instance
+    '''
+    client = EC2ConnectionClient().client()
+    inst = AwsInstance().get_resource()
+    snapshot_ids = ctx.instance.runtime_properties.get(
+        'snapshot_ids_creating', list())
+    # If this is the first try, create the snapshots
+    if ctx.operation.retry_number == 0:
+        for dev in inst.block_device_mapping.itervalues():
+            ctx.logger.info('Creating snapshot of volume %s' % dev.volume_id)
+            snapshot = client.create_snapshot(dev.volume_id)
+            snapshot_ids.append(snapshot.id)
+            ctx.logger.info('Snapshot %s (volume: %s) is creating. Status: %s'
+                            % (snapshot.id, dev.volume_id, snapshot.status))
+        ctx.instance.runtime_properties['snapshot_ids'] = snapshot_ids
+    # Verify that all snapshots are completed
+    for snapshot in client.get_all_snapshots(snapshot_ids=snapshot_ids):
+        if snapshot.status != 'completed':
+            return ctx.operation.retry(
+                'Waiting for snapshot %s (status: %s) to complete. Retrying...'
+                % (snapshot.id, snapshot.status))
+
+
 def delete_snapshots(ctx, **_):
     '''
         Deletes snapshots of all volumes attached to an instance

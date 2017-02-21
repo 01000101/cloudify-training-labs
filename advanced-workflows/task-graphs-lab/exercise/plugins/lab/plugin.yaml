@@ -5,7 +5,7 @@ plugins:
     executor: central_deployment_agent
     package_name: lab-wf-graphs-plugin
     package_version: '0.1'
-    source: custom
+    source: lab
 
 
 node_types:
@@ -20,6 +20,7 @@ node_types:
       hacker.interfaces.lifecycle:
         stop: pkg.plugin.operations.stop
         start: pkg.plugin.operations.start
+        create_snapshots: pkg.plugin.operations.create_snapshots
         delete_snapshots: pkg.plugin.operations.delete_snapshots
 
 
