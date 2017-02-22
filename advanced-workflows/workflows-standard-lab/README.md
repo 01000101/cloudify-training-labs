@@ -30,7 +30,7 @@ cfy executions start -d lab-std-wf-01 -w check_wind_speed -l
 pip uninstall -y lab-wf-standard-plugin
 
 # Install the local plugin into your VirtualEnv
-pip install .
+pip install ./exercise/plugins/lab/
 
 # Initialize the deployment and execute the custom workflow
 cfy local install --install-plugins --debug \

@@ -1,0 +1,63 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+plugins:
+  pkg:
+    executor: central_deployment_agent
+    package_name: cloudify-aws-rekognition-plugin
+    package_version: '0.1'
+    source: lab
+
+data_types:
+  cloudify.datatypes.aws.Config:
+    properties:
+      aws_access_key_id:
+        description: >
+          The ID of your AWS ACCESS KEY.
+        type: string
+        required: false
+      aws_secret_access_key:
+        description: >
+          The ID of your AWS SECRET KEY.
+        type: string
+        required: false
+      ec2_region_name:
+        description: >
+          The EC2 Region RegionName, such as us-east-1.
+          (Not us-east-1b, which is an availability zone, or US East, which is a Region.)
+        type: string
+        required: false
+      rekognition_region_name:
+        description: >
+          The Rekognition Region RegionName, such as us-east-1. Defaults to the value
+          given to ec2_region_name
+        type: string
+        required: false
+
+node_types:
+  cloudify.aws.rekognition.nodes.SceneDetection:
+    derived_from: cloudify.nodes.Root
+    properties:
+      image:
+        description: >
+          Path to an image that will be processed by
+          Rekognition with the Scene Detection action. This property
+          can either be a string (path to a local image file) or a
+          dictionary / object with S3 keys. If using an S3 file, you
+          must specify a 'bucket' key (S3 bucket name) and a 'name' key
+          (S3 file name). You may also specify a 'version' key if your
+          S3 file uses versioning.
+        required: true
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: cloudify.datatypes.aws.Config
+        required: false
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start: pkg.rekognition.detection.scene.start
+        
+  cloudify.aws.rekognition.nodes.FacesDetection:
+    derived_from: cloudify.aws.rekognition.nodes.SceneDetection
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start: pkg.rekognition.detection.faces.start

@@ -37,7 +37,7 @@ cfy executions start -d lab-graphs-wf-01 -w refresh_snapshots -l
 pip uninstall -y lab-wf-graphs-plugin
 
 # Install the local plugin into your VirtualEnv
-pip install .
+pip install ./exercise/plugins/lab/
 
 # Initialize the deployment and execute the custom workflow
 cfy local install --install-plugins --debug \
