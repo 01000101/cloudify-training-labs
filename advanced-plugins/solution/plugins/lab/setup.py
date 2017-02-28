@@ -4,12 +4,12 @@ from setuptools import setup
 
 
 setup(
-    name='cloudify-aws-rekognition-plugin',
+    name='cloudify-aws-api-gateway-plugin',
     version='1.4',
     license='LICENSE',
     packages=[
-        'rekognition',
-        'rekognition.detection'
+        'api_gateway',
+        'api_gateway.resources'
     ],
     description='A Cloudify plugin for training labs',
     install_requires=[

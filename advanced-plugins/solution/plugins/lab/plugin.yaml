@@ -1,11 +1,13 @@
 tosca_definitions_version: cloudify_dsl_1_3
 
+
 plugins:
   pkg:
     executor: central_deployment_agent
-    package_name: cloudify-aws-rekognition-plugin
+    package_name: cloudify-aws-api-gateway-plugin
     package_version: '0.1'
     source: lab
+
 
 data_types:
   cloudify.datatypes.aws.Config:
@@ -26,38 +28,58 @@ data_types:
           (Not us-east-1b, which is an availability zone, or US East, which is a Region.)
         type: string
         required: false
-      rekognition_region_name:
+      api_gateway_region_name:
         description: >
-          The Rekognition Region RegionName, such as us-east-1. Defaults to the value
+          The API Gateway Region RegionName, such as us-east-1. Defaults to the value
           given to ec2_region_name
         type: string
         required: false
 
-node_types:
-  cloudify.aws.rekognition.nodes.SceneDetection:
-    derived_from: cloudify.nodes.Root
-    properties:
-      image:
-        description: >
-          Path to an image that will be processed by
-          Rekognition with the Scene Detection action. This property
-          can either be a string (path to a local image file) or a
-          dictionary / object with S3 keys. If using an S3 file, you
-          must specify a 'bucket' key (S3 bucket name) and a 'name' key
-          (S3 file name). You may also specify a 'version' key if your
-          S3 file uses versioning.
-        required: true
-      aws_config:
+
+dsl_definitions:
+  BASE_config: &BASE_config
+    use_external_resource:
+      description: >
+        Indicate whether the resource exists or if Cloudify should create the resource,
+        true if you are bringing an existing resource, false if you want cloudify to create it.
+      type: boolean
+      default: false
+      required: true
+    resource_id:
+      description: >
+        The AWS resource ID of the external resource, if use_external_resource is true.
+        Otherwise it is an empty string.
+      type: string
+      default: ''
+    aws_config:
         description: >
           A dictionary of values to pass to authenticate with the AWS API.
         type: cloudify.datatypes.aws.Config
         required: false
+  
+  RESTAPI_properties: &RESTAPI_properties
+    <<: *BASE_config
+    name:
+      description: >
+        User-defined name of the REST API
+      required: true
+    description:
+      description: >
+        User-defined description of the REST API
+      required: false
+    version:
+      description: >
+        User-defined version of the REST API
+      required: false
+
+
+node_types:
+  cloudify.nodes.aws.apigateway.RESTAPI:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *RESTAPI_properties
     interfaces:
       cloudify.interfaces.lifecycle:
-        start: pkg.rekognition.detection.scene.start
-        
-  cloudify.aws.rekognition.nodes.FacesDetection:
-    derived_from: cloudify.aws.rekognition.nodes.SceneDetection
-    interfaces:
-      cloudify.interfaces.lifecycle:
-        start: pkg.rekognition.detection.faces.start
+        create: pkg.api_gateway.resources.rest_api.create
+        delete: pkg.api_gateway.resources.rest_api.delete
+

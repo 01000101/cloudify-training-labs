@@ -8,40 +8,29 @@ inputs:
   aws_access_key_id:
     type: string
     description: |
-      AWS API access key ID (must have Rekognition rights)
+      AWS API access key ID (must have API Gateway rights)
   
   aws_secret_access_key:
     type: string
     description: |
-      AWS API secret access key (must have Rekognition rights)
+      AWS API secret access key (must have API Gateway rights)
     
   aws_region_name:
     type: string
     default: us-east-1
     description: |
-      AWS Rekognition region name
-    
-  local_image_path:
-    type: string
-    description: |
-      Local file path to an image to use with Rekognition
+      AWS API Gateway region name
+
 
 dsl_definitions:
   aws_config: &aws_config
     aws_access_key_id: { get_input: aws_access_key_id }
     aws_secret_access_key: { get_input: aws_secret_access_key }
-    rekognition_region_name: { get_input: aws_region_name }
+    api_gateway_region_name: { get_input: aws_region_name }
 
 node_templates:
-  scene_detection:
-    type: cloudify.aws.rekognition.nodes.SceneDetection
+  API:
+    type: cloudify.nodes.aws.apigateway.RESTAPI
     properties:
-      image: { get_input: local_image_path }
+      name: LabAPI
       aws_config: *aws_config
-      
-  faces_detection:
-    type: cloudify.aws.rekognition.nodes.FacesDetection
-    properties:
-      image: { get_input: local_image_path }
-      aws_config: *aws_config
-      
