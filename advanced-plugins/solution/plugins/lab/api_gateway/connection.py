@@ -40,7 +40,7 @@ class APIGatewayConnection(object):
         self.aws_config.update(aws_config or dict())
         # Prepare region name for Boto
         self.aws_config['region_name'] = self.aws_config.get(
-            'rekognition_region_name', self.aws_config.get('ec2_region_name'))
+            'api_gateway_region_name', self.aws_config.get('ec2_region_name'))
         # Delete all non-whitelisted keys
         self.aws_config = {k: v for k, v in self.aws_config.iteritems()
                            if k in aws_config_whitelist}
