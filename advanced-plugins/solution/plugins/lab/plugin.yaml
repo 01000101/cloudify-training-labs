@@ -14,12 +14,12 @@ data_types:
     properties:
       aws_access_key_id:
         description: >
-          The ID of your AWS ACCESS KEY.
+          The ID of your AWS ACCESS KEY ID.
         type: string
         required: false
       aws_secret_access_key:
         description: >
-          The ID of your AWS SECRET KEY.
+          The ID of your AWS SECRET ACCESS KEY.
         type: string
         required: false
       ec2_region_name:
@@ -37,14 +37,13 @@ data_types:
 
 
 dsl_definitions:
-  BASE_config: &BASE_config
+  Base_config: &Base_config
     use_external_resource:
       description: >
         Indicate whether the resource exists or if Cloudify should create the resource,
         true if you are bringing an existing resource, false if you want cloudify to create it.
       type: boolean
       default: false
-      required: true
     resource_id:
       description: >
         The AWS resource ID of the external resource, if use_external_resource is true.
@@ -57,29 +56,61 @@ dsl_definitions:
         type: cloudify.datatypes.aws.Config
         required: false
   
-  RESTAPI_properties: &RESTAPI_properties
-    <<: *BASE_config
+  # Exposed runtime properties
+  # "aws_resource_id": AWS ID of the API
+  # "aws_resource_name": AWS name / title of the API
+  API_properties: &API_properties
+    <<: *Base_config
+    import:
+      description: >
+        Swagger import data. This can either be a string that is a
+        path to an import data file or it can be JSON/YAML/dict with
+        the actual import data. This key is required if not
+        using "use_external_resource"!
+      required: false
+      default: ''
+      
+  # Exposed runtime properties
+  # "aws_resource_id": AWS ID of the Deployment
+  # "stage_name": Stage name for the deployment. If more than one exist, only
+  #     the first will be presented here.
+  # "invoke_url": Publicly accessible API endpoint for the deployment stage
+  Deployment_properties: &Deployment_properties
+    <<: *Base_config
+    api_id:
+      description: >
+        AWS ID of the API to create a deployment for. Alternatively,
+        specify a contained_in relationship to an API node. If both
+        methods are used, this property takes priority.
+      required: false
     name:
       description: >
-        User-defined name of the REST API
-      required: true
+        Name of the deployment stage. This key is required if not
+        using "use_external_resource"!
+      required: false
+      default: ''
     description:
       description: >
-        User-defined description of the REST API
+        Description of the deployment stage
       required: false
-    version:
-      description: >
-        User-defined version of the REST API
-      required: false
+      default: ''
 
 
 node_types:
-  cloudify.nodes.aws.apigateway.RESTAPI:
+  cloudify.nodes.aws.apigateway.API:
     derived_from: cloudify.nodes.Root
     properties:
-      <<: *RESTAPI_properties
+      <<: *API_properties
     interfaces:
       cloudify.interfaces.lifecycle:
-        create: pkg.api_gateway.resources.rest_api.create
-        delete: pkg.api_gateway.resources.rest_api.delete
+        create: pkg.api_gateway.resources.api.create
+        delete: pkg.api_gateway.resources.api.delete
 
+  cloudify.nodes.aws.apigateway.Deployment:
+    derived_from: cloudify.nodes.Root
+    properties:
+      <<: *Deployment_properties
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create: pkg.api_gateway.resources.deployment.create
+        delete: pkg.api_gateway.resources.deployment.delete

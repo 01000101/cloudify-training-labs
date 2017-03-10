@@ -20,6 +20,25 @@ inputs:
     default: us-east-1
     description: |
       AWS API Gateway region name
+      
+  api_version:
+    type: string
+    default: "1.0a"
+    description: |
+      API version identified
+      
+  api_name:
+    type: string
+    default: CloudifyAPILab
+    description: |
+      API name / title
+      
+  api_description:
+    type: string
+    default: |
+      An example API deployed with Cloudify
+    description: |
+      API description
 
 
 dsl_definitions:
@@ -28,9 +47,52 @@ dsl_definitions:
     aws_secret_access_key: { get_input: aws_secret_access_key }
     api_gateway_region_name: { get_input: aws_region_name }
 
+
 node_templates:
   API:
-    type: cloudify.nodes.aws.apigateway.RESTAPI
+    type: cloudify.nodes.aws.apigateway.API
     properties:
-      name: LabAPI
       aws_config: *aws_config
+      import:
+        swagger: "2.0"
+        info:
+          version: { get_input: api_version }
+          title: { get_input: api_name }
+          description: { get_input: api_description }
+        schemes:
+        - https
+        paths:
+          /:
+            get:
+              consumes:
+              - application/json
+              produces:
+              - application/json
+              responses:
+                200:
+                  description: 200 response
+              x-amazon-apigateway-integration:
+                responses:
+                  200:
+                    statusCode: "200"
+                    responseTemplates:
+                      application/json: "{\"status\": \"OK\", \"version\": \"1.0.0\"}"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                passthroughBehavior: when_no_match
+                type: mock
+                
+  API_deployment:
+    type: cloudify.nodes.aws.apigateway.Deployment
+    properties:
+      name: staging
+      aws_config: *aws_config
+    relationships:
+    - type: cloudify.relationships.contained_in
+      target: API
+
+
+outputs:
+  endpoint:
+    description: Public API deployment stage endpoint
+    value: { get_attribute: [API_deployment, invoke_url] }

@@ -21,6 +21,5 @@
 AWS_CONFIG_PROPERTY = 'aws_config'
 EXTERNAL_RESOURCE_ID = 'aws_resource_id'
 
-ALLOWED_KEYS_REST_API = [
-    'name', 'description', 'version'
-]
+NODE_TYPE_API = 'cloudify.nodes.aws.apigateway.API'
+REL_CONTAINED_IN = 'cloudify.relationships.contained_in'

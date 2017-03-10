@@ -13,14 +13,14 @@
 #    * See the License for the specific language governing permissions and
 #    * limitations under the License.
 '''
-    API_Gateway.Resources.REST_API
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    AWS API Gateway REST API resource interface
+    API_Gateway.Resources.API
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+    AWS API Gateway REST API interface
 '''
+import json
 # Cloudify
 from cloudify.exceptions import RecoverableError, NonRecoverableError
-from api_gateway.constants import (
-    EXTERNAL_RESOURCE_ID, ALLOWED_KEYS_REST_API)
+from api_gateway.constants import EXTERNAL_RESOURCE_ID
 from api_gateway import utils
 from api_gateway.connection import APIGatewayConnection
 # Boto
@@ -29,10 +29,31 @@ from botocore.exceptions import ClientError
 
 def create(ctx, **_):
     '''Creates an AWS API Gateway REST API'''
+    props = ctx.node.properties
     # Get a connection to the service
     client = APIGatewayConnection(ctx.node).client()
-    # Create the resource if needed
-    create_if_needed(ctx, client)
+    # Check if we are creating something or not
+    if not props['use_external_resource']:
+        if 'import' not in props:
+            raise NonRecoverableError(
+                'External resource not specified, but "import" key not found!')
+        # Actually create the resource
+        ctx.logger.info('Creating REST API')
+        # Import data
+        params = dict()
+        if isinstance(ctx.node.properties['import'], dict):
+            ctx.logger.debug('Importing data from YAML definition')
+            params['body'] = json.dumps(ctx.node.properties['import'])
+        elif isinstance(ctx.node.properties['import'], str):
+            ctx.logger.debug('Importing data from file')
+            params['body'] = open(ctx.node.properties['import'], 'rb')
+        else:
+            raise NonRecoverableError(
+                'Invalid import data format. Expected either dict or str.')
+        ctx.logger.debug('Importing REST API data')
+        resource = client.import_rest_api(**params)
+        ctx.logger.debug('Response: %s' % resource)
+        ctx.instance.runtime_properties[EXTERNAL_RESOURCE_ID] = resource['id']
     # Get the resource ID (must exist at this point)
     resource_id = utils.get_resource_id(raise_on_missing=True)
     # Get the resource
@@ -65,24 +86,3 @@ def delete(ctx, **_):
             ctx.logger.debug('REST API "%s" deleted' % resource_id)
         except ClientError:
             raise RecoverableError('Error deleting REST API')
-
-
-def create_if_needed(ctx, client):
-    '''
-        Creates a new resource if the context
-        is that of a non-external type. This automatically
-        updates the current contexts' resource ID.
-    '''
-    props = ctx.node.properties
-    if props['use_external_resource'] or ctx.operation.retry_number > 0:
-        ctx.logger.debug('External resource declared')
-        return
-    # Actually create the resource
-    ctx.logger.info('Creating REST API')
-    resource = client.create_rest_api(
-        **utils.filter_boto_params(props, ALLOWED_KEYS_REST_API))
-    if 'id' not in resource:
-        NonRecoverableError(
-            'Creating resource yielded an unexpected response: %s' % resource)
-    ctx.logger.info('Successfully created REST API "%s"' % resource['id'])
-    ctx.instance.runtime_properties[EXTERNAL_RESOURCE_ID] = resource['id']
