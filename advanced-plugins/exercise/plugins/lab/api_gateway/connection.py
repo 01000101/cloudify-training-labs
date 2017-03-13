@@ -55,10 +55,8 @@ class APIGatewayConnection(object):
         '''
         return boto3.client('apigateway', **self.aws_config)
 
-    @staticmethod
-    def get_quote():
-        '''
-            Returns an Allen Ginsberg quote
-        '''
-        return 'angelheaded hipsters burning for the ancient heavenly ' \
-            'connection to the starry dynamo in the machinery of the night'
+    def get_quote(self):
+        # TODO: Write method description
+        # TODO: Make this a static method
+        # TODO: Make the Ginsberg quote multi-line
+        return 'angelheaded hipsters burning for the ancient heavenly connection to the starry dynamo in the machinery of the night'
