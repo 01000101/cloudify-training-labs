@@ -63,7 +63,7 @@ def create(ctx, **_):
         ctx.instance.runtime_properties['stage_name'] = \
             stages['item'][0]['stageName']
         ctx.instance.runtime_properties['invoke_url'] = \
-            'https://%s.execute-api.%s.amazonaws.com/%s/' % (
+            'https://%s.execute-api.%s.amazonaws.com/%s' % (
                 api_resource_id, client._client_config.region_name,
                 stages['item'][0]['stageName'])
     except ClientError:
