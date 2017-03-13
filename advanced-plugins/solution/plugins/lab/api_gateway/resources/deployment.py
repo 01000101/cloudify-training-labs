@@ -17,6 +17,8 @@
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     AWS API Gateway Deployment interface
 '''
+# Requests
+import requests
 # Cloudify
 from cloudify.exceptions import RecoverableError, NonRecoverableError
 from api_gateway.constants import (EXTERNAL_RESOURCE_ID, NODE_TYPE_API)
@@ -45,7 +47,7 @@ def create(ctx, **_):
             stageDescription=props.get('description', ''))
         resource = client.create_deployment(**params)
         ctx.logger.debug('Response: %s' % resource)
-        ctx.instance.runtime_properties[EXTERNAL_RESOURCE_ID] = resource['id']
+        utils.update_resource_id(ctx.instance, resource['id'])
     # Get the resource ID (must exist at this point)
     resource_id = utils.get_resource_id(raise_on_missing=True)
     # Get the resource
@@ -66,6 +68,22 @@ def create(ctx, **_):
                 stages['item'][0]['stageName'])
     except ClientError:
         raise NonRecoverableError('Error creating Deployment')
+
+
+def create_validation(ctx, path, expected, **_):
+    '''Validates the create process'''
+    # Find the endpoint to test against
+    invoke_url = ctx.instance.runtime_properties['invoke_url']
+    # Normalize url / path
+    if invoke_url.endswith('/'):
+        invoke_url = invoke_url[:-1]
+    invoke_url = invoke_url + (path if path.startswith('/') else path + '/')
+    # Make the request
+    res = requests.get(invoke_url)
+    # Validate
+    if res.text != expected:
+        raise NonRecoverableError('Received "%s", expected "%s"'
+                                  % (res.text, expected))
 
 
 def delete(ctx, **_):

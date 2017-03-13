@@ -34,26 +34,14 @@ def create(ctx, **_):
     client = APIGatewayConnection(ctx.node).client()
     # Check if we are creating something or not
     if not props['use_external_resource']:
-        if 'import' not in props:
-            raise NonRecoverableError(
-                'External resource not specified, but "import" key not found!')
         # Actually create the resource
         ctx.logger.info('Creating REST API')
-        # Import data
-        params = dict()
-        if isinstance(ctx.node.properties['import'], dict):
-            ctx.logger.debug('Importing data from YAML definition')
-            params['body'] = json.dumps(ctx.node.properties['import'])
-        elif isinstance(ctx.node.properties['import'], str):
-            ctx.logger.debug('Importing data from file')
-            params['body'] = open(ctx.node.properties['import'], 'rb')
-        else:
-            raise NonRecoverableError(
-                'Invalid import data format. Expected either dict or str.')
-        ctx.logger.debug('Importing REST API data')
-        resource = client.import_rest_api(**params)
+        resource = client.create_rest_api(**dict(
+            name=props['name'],
+            description=props['description'],
+            version=props['version']))
         ctx.logger.debug('Response: %s' % resource)
-        ctx.instance.runtime_properties[EXTERNAL_RESOURCE_ID] = resource['id']
+        utils.update_resource_id(ctx.instance, resource['id'])
     # Get the resource ID (must exist at this point)
     resource_id = utils.get_resource_id(raise_on_missing=True)
     # Get the resource
@@ -63,6 +51,33 @@ def create(ctx, **_):
         ctx.logger.debug('REST API "%s": %s' % (resource_id, resource))
     except ClientError:
         raise NonRecoverableError('Error creating REST API')
+
+
+def configure(ctx, **_):
+    '''Configures an AWS API Gateway REST API'''
+    props = ctx.node.properties
+    if 'import' not in props or not props['import']:
+        ctx.logger.debug('Skipping API import')
+        return
+    # Get a connection to the service
+    client = APIGatewayConnection(ctx.node).client()
+    # Get the resource ID (must exist at this point)
+    resource_id = utils.get_resource_id(raise_on_missing=True)
+    # Import data
+    params = dict(restApiId=resource_id,
+                  mode=props.get('import_mode', 'overwrite'))
+    if isinstance(ctx.node.properties['import'], dict):
+        ctx.logger.debug('Importing data from YAML definition')
+        params['body'] = json.dumps(ctx.node.properties['import'])
+    elif isinstance(ctx.node.properties['import'], str):
+        ctx.logger.debug('Importing data from file')
+        params['body'] = open(ctx.node.properties['import'], 'rb')
+    else:
+        raise NonRecoverableError(
+            'Invalid import data format. Expected either dict or str.')
+    ctx.logger.debug('Importing REST API data')
+    resource = client.put_rest_api(**params)
+    ctx.logger.debug('Response: %s' % resource)
 
 
 def delete(ctx, **_):

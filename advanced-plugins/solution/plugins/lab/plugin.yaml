@@ -61,6 +61,29 @@ dsl_definitions:
   # "aws_resource_name": AWS name / title of the API
   API_properties: &API_properties
     <<: *Base_config
+    name:
+      description: >
+        The name of the RestApi.
+        Required if "use_external_resource" is not set.
+      required: false
+      default: ''
+    description:
+      description: >
+        The description of the RestApi.
+        Required if "use_external_resource" is not set.
+      required: false
+      default: ''
+    version:
+      description: >
+        A version identifier for the API.
+        Required if "use_external_resource" is not set.
+      required: false
+      default: ''
+    import_mode:
+      description: >
+        Import mode. This can either be "merge" or "overwrite".
+      required: false
+      default: overwrite
     import:
       description: >
         Swagger import data. This can either be a string that is a
@@ -68,7 +91,6 @@ dsl_definitions:
         the actual import data. This key is required if not
         using "use_external_resource"!
       required: false
-      default: ''
       
   # Exposed runtime properties
   # "aws_resource_id": AWS ID of the Deployment
@@ -104,6 +126,7 @@ node_types:
     interfaces:
       cloudify.interfaces.lifecycle:
         create: pkg.api_gateway.resources.api.create
+        configure: pkg.api_gateway.resources.api.configure
         delete: pkg.api_gateway.resources.api.delete
 
   cloudify.nodes.aws.apigateway.Deployment:
@@ -114,3 +137,18 @@ node_types:
       cloudify.interfaces.lifecycle:
         create: pkg.api_gateway.resources.deployment.create
         delete: pkg.api_gateway.resources.deployment.delete
+      cloudify.interfaces.validation:
+        creation:
+          implementation: pkg.api_gateway.resources.deployment.create_validation
+          inputs:
+            path:
+              description: >
+                URL path (appended to Deployment invoke URL) to
+                perform a GET request against.
+              type: string
+              default: '/'
+            expected:
+              description: >
+                A string to compare results of the request against.
+              type: string
+              default: '{"status": "OK", "version": "1.0.0"}'

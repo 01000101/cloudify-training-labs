@@ -20,22 +20,6 @@
 from cloudify import ctx
 from cloudify.exceptions import NonRecoverableError
 from api_gateway import constants
-# Boto
-from botocore.exceptions import ClientError
-
-
-def raise_on_boto_exception(func):
-    '''
-        Decorator that raises a NonRecoverableError exception when
-        a Boto ClientError is raised.
-    '''
-    def func_wrapper(*args, **kwargs):
-        '''Decorated function wrapper'''
-        try:
-            return func(*args, **kwargs)
-        except ClientError as exc:
-            raise NonRecoverableError(str(exc))
-    return func_wrapper
 
 
 def get_resource_id(node=None, instance=None,
@@ -69,48 +53,6 @@ def get_resource_id(node=None, instance=None,
 def update_resource_id(instance, val):
     '''Updates an instance's resource ID'''
     instance.runtime_properties[constants.EXTERNAL_RESOURCE_ID] = val
-
-
-def get_parent_resource_id(node_instance,
-                           rel_type=constants.REL_CONTAINED_IN,
-                           raise_on_missing=True):
-    '''Finds a relationship to a parent and gets its resource ID'''
-    rel = find_rel_by_type(node_instance, rel_type)
-    if not rel:
-        if raise_on_missing:
-            raise NonRecoverableError('Error locating parent resource ID')
-        return None
-    return get_resource_id(instance=rel.target.instance,
-                           raise_on_missing=raise_on_missing)
-
-
-def get_ancestor_resource_id(node_instance,
-                             node_type,
-                             raise_on_missing=True):
-    '''Finds an ancestor and gets its resource ID'''
-    ancestor = get_ancestor_by_type(node_instance, node_type)
-    if not ancestor:
-        if raise_on_missing:
-            raise NonRecoverableError('Error locating ancestor resource ID')
-        return None
-    return get_resource_id(instance=ancestor.instance,
-                           raise_on_missing=raise_on_missing)
-
-
-def filter_boto_params(args, filters, preserve_none=False):
-    '''
-        Takes in a dictionary, applies a "whitelist" of key names,
-        and removes keys which have associated values of None.
-
-    :param dict args: Original dictionary to filter
-    :param list filters: Whitelist list of keys
-    :param boolean preserve_none: If True, keeps key-value pairs even
-        if the value is None.
-    '''
-    return {
-        k: v for k, v in args.iteritems()
-        if k in filters and (preserve_none is True or v is not None)
-    }
 
 
 def find_rels_by_type(node_instance, rel_type):
@@ -154,3 +96,16 @@ def get_ancestor_by_type(inst, node_type):
     if node_type in rel.target.node.type_hierarchy:
         return rel.target
     return get_ancestor_by_type(rel.target.instance, node_type)
+
+
+def get_ancestor_resource_id(node_instance,
+                             node_type,
+                             raise_on_missing=True):
+    '''Finds an ancestor and gets its resource ID'''
+    ancestor = get_ancestor_by_type(node_instance, node_type)
+    if not ancestor:
+        if raise_on_missing:
+            raise NonRecoverableError('Error locating ancestor resource ID')
+        return None
+    return get_resource_id(instance=ancestor.instance,
+                           raise_on_missing=raise_on_missing)
